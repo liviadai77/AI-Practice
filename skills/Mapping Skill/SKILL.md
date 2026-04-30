@@ -173,179 +173,45 @@ Extract ALL elements exactly as defined in PDF:
 
 ---
 
-## 5. Mapping Rules (UNIFIED RAG + PDF + CONTROL SYSTEM)
+## 5. Mapping Rules (CRITICAL)
 
-This section defines the **single unified mapping decision system**, combining:
-
-- PDF extraction rules (structural source)
-- Google Drive historical mapping (SYSTEM OF RECORD - RAG)
-- Semantic inference (fallback)
-- Hardcode rules (control segments only)
-
----
-
-## 5.1 Global Mapping Priority (ABSOLUTE ORDER)
-
-All OMS/WMS mapping decisions MUST follow this priority chain:
-
-| Priority | Source | Description |
-|----------|--------|-------------|
-| 1 | Google Drive Historical Mapping (RAG) | SYSTEM OF RECORD (highest priority) |
-| 2 | PDF Explicit Content | Structural truth source |
-| 3 | Semantic Inference | Only when no historical mapping exists |
-| 4 | Hardcode Rules | Only for control segments (ISA / GS / SE / IEA) |
-
----
-
-## 5.2 No Hallucination Rule (HIGHEST PRIORITY)
+### 5.1 No Hallucination Rule
 
 - DO NOT invent fields
-- DO NOT create new OMS/WMS schema
-- ONLY use:
-  - PDF explicit fields
-  - Google Drive historical mapping
-  - Strict fallback rules (TBD only)
+- DO NOT infer missing elements
+- ONLY use data explicitly present in PDF
 
 ---
 
-## 5.3 Google Drive Mapping Rule (RAG CORE RULE)
+### 5.2 System Mapping Priority
 
-Before ANY mapping decision:
+Default target system:
 
-### MUST execute:
-
-- Call Google Drive mapping retrieval skill
-- Search historical EDI mapping files
-- Retrieve similar segment/field mappings
+👉 OMS first  
+👉 WMS only if explicitly required  
 
 ---
 
-### Retrieval Scope:
+### 5.3 Mapping Logic
 
-- 940 / 945 / 856 mapping files
-- OMS/WMS historical mappings
-- Enterprise mapping templates
-
----
-
-### Decision Logic:
-
-| Condition | Action |
-|----------|--------|
-| Exact match found | Use existing mapping directly |
-| Partial match found | Adapt existing pattern |
-| No match found | Use semantic inference |
-| Still unclear | Output "TBD" |
-
----
-
-👉 Google Drive is treated as SYSTEM OF RECORD
-
----
-
-## 5.4 Segment-Specific Mapping Rules
-
-### A. Control Segments (STRICT MODE)
-
-Segments:
-
-- ISA
-- GS
-- SE
-- IEA
-
-### Rules:
-
-- ONLY allow Hardcode mapping
-- DO NOT output OMS/WMS mapping unless explicitly required
-
-### Format:
-
-Hardcode "VALUE"
-
-Example:
-
-| Segment | Segment Element | OMS/WMS Mapping |
-|---------|----------------|------------------|
-| ISA | ISA06 | Hardcode "SENDER_ID" |
-
----
-
-### B. Business Segments (FULL RAG MODE)
-
-Segments:
-
-- REF
-- N1
-- DTM
-- W05
-- LIN
-- HL
-
-### Rules:
-
-- MUST use Google Drive historical mapping FIRST
-- Semantic inference ONLY if no match exists
-
----
-
-## 5.5 Mapping Normalization Rule
-
-When using Google Drive mappings:
-
-- Normalize naming conventions
-- Align with OMS standards
-- Reuse canonical field names
+- Based on semantic meaning
+- Must align with system naming convention
+- If unclear → "TBD"
 
 Examples:
-
-- shipToAddress[].name  
-- orderNo  
-- referenceNo  
-- channelSalesOrderNo  
+orderNo  
+shipToAddress[].name  
+referenceNo  
 
 ---
 
-## 5.6 Hardcode Rule (CONTROL SEGMENTS ONLY)
+### 5.4 Hardcode Rule
 
-Applies ONLY to:
-
-- ISA
-- GS
-- SE
-- IEA
-
-Rules:
-
-- ONLY allowed mapping type = Hardcode
-- Format strictly:
+If required:
 
 Hardcode "VALUE"
 
----
-
-## 5.7 No-Invention Rule (STRICT FALLBACK RULE)
-
-If no mapping exists in:
-
-- Google Drive
-- PDF
-- Semantic inference
-
-Then MUST return:
-
-"TBD (No historical mapping found)"
-
----
-
-## 5.8 System Principle (FINAL GOVERNANCE RULE)
-
-- Google Drive = SYSTEM OF RECORD (highest authority)
-- PDF = structural truth source
-- Semantic = fallback only
-- Hardcode = control segments only
-
-👉 Mapping is a **retrieval-first decision system**, not generation
+Must be explicitly labeled.
 
 ---
 
