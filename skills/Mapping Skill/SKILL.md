@@ -10,152 +10,60 @@ metadata:
 
 ---
 
-## 0. PDF Parsing Strategy (LEVEL 2 - PyMuPDF BASED IMPLEMENTATION)
+## 0.1 Sequential Page Processing (CORE RULE)
 
-This skill MUST use **PyMuPDF (fitz)** as the primary PDF parsing engine.
+Processing MUST follow strict order:
 
-❗ No other PDF parsing method is allowed for Stage 1 indexing.
-
----
-
-## 0.1 Stage 1 — Fast Segment Indexing (PyMuPDF REQUIRED)
-
-Use PyMuPDF text extraction ONLY to perform fast scanning.
-
-### Required Tool:
-- fitz (PyMuPDF)
+👉 Page 1 → Process → Output  
+👉 Page 2 → Process → Append  
+👉 Page 3 → Process → Append  
 
 ---
 
 ### Execution Rules:
 
-1. Open PDF using PyMuPDF:
-   - fitz.open(pdf)
-
-2. Iterate page by page:
-   - extract text only (no table parsing)
-
-3. Detect Segment Headers using regex / keyword matching:
-
-Target patterns:
-- REF
-- N1
-- DTM
-- W05
-- LIN
-- HL
+- Only ONE page processed at a time
+- Must finish mapping before moving to next page
+- Results MUST be appended incrementally
+- Maintain global context across pages
 
 ---
 
-### Output (Segment Index Map):
+## 0.2 Visual Extraction Model (CRITICAL)
 
-You MUST generate a mapping:
+Each page is treated as a **visual structure (not text PDF)**.
 
-Segment → Page Number(s)
+Extraction sources:
+
+- Segment headers (ISA/ GS / N1 / DTM / W05 / LIN / HL)
+- Table rows
+- Code lists under elements
+- Min/Max + Req fields
+
+---
+
+## 0.3 Segment Continuity Rule
+
+Cross-page logic MUST be preserved:
+
+- N1 Loop continues across pages
+- REF / LIN / HL relationships must persist
+- OMS/WMS field naming must remain consistent
 
 Example:
 
-REF → Page 3  
-N1  → Page 4  
-DTM → Page 6  
+channelSalesOrderNo must remain identical across all pages
 
 ---
 
-### STRICT CONSTRAINTS:
+## 0.4 Incremental Output Rule (APPEND MODE)
 
-❗ DO NOT extract tables in Stage 1  
-❗ DO NOT parse element-level data in Stage 1  
-❗ ONLY perform text-layer scanning using PyMuPDF  
+Each page output MUST:
 
----
+- Be appended to previous result
+- Never overwrite previous rows
+- Preserve global table continuity
 
-## 0.2 Stage 2 — Lazy Segment Parsing (PyMuPDF REGION EXTRACTION)
-
-After index is built:
-
-For each segment:
-
-1. Re-open PDF with PyMuPDF
-2. Navigate to target page
-3. Extract ONLY relevant text block region
-4. Parse structured elements (REF01, N101, etc.)
-
----
-
-### Parsing Strategy:
-
-- Use page.get_text("blocks") OR page.get_text("dict")
-- Identify table-like structure via coordinates
-- Extract row/column structure from layout
-
----
-
-### Example Execution Flow:
-
-REF → locate page → extract block → parse REF01/REF02  
-N1  → locate page → extract block → parse N101/N102  
-
----
-
-## 0.3 Performance Rules (CRITICAL)
-
-PyMuPDF must be used with following constraints:
-
-- Page-level scanning first (fast mode)
-- Block-level parsing only when needed
-- No full document table extraction
-- No OCR unless explicitly required
-
----
-
-## 0.4 Recommended PyMuPDF Usage Pattern
-
-```python id="fitz-example"
-import fitz  # PyMuPDF
-
-doc = fitz.open("edi_spec.pdf")
-
-for page_num in range(len(doc)):
-    page = doc[page_num]
-    text = page.get_text("text")
-
-    if "REF" in text or "N1" in text:
-        print(page_num, "contains segment")
----
-
-### Stage 1 — Fast Segment Indexing (MANDATORY)
-
-Use a lightweight PDF text extraction method (e.g., PyMuPDF) to:
-
-- Scan ONLY PDF text layer (no full table parsing)
-- Detect Segment headers (e.g., REF, N1, DTM, W05)
-- Build a Segment Index Map
-
-Example:
-
-REF → Page 3  
-N1  → Page 4  
-DTM → Page 6  
-
-❗ DO NOT extract full tables in this stage  
-❗ DO NOT parse element details in this stage  
-
----
-
-### Stage 2 — Lazy Segment Parsing (MANDATORY)
-
-For each segment in the index:
-
-- Load ONLY the required segment region/page
-- Extract elements (REF01, N101, etc.)
-- Apply schema-based extraction per segment type
-- Convert into structured intermediate data
-
-Example:
-
-REF → parse_ref_block()  
-N1  → parse_n1_block()  
-DTM → parse_dtm_block()  
 
 ---
 
