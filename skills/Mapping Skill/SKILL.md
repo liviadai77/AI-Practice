@@ -1,3 +1,11 @@
+---
+name: edi-mapping-spec-to-excel
+description: Convert EDI specification PDFs (e.g., 940, 945) into structured Excel mapping files by extracting segments, elements, and metadata, and formatting them according to a standardized mapping template. Use when working with trading partner EDI specs and generating mapping documents without missing or inventing fields.
+metadata:
+  author: edi-team
+  version: "1.0.0"
+---
+
 # EDI Mapping Skill & Standards (Spec → Excel)
 
 ## 1. Purpose
