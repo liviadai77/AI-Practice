@@ -10,10 +10,117 @@ metadata:
 
 ---
 
-## 0. PDF Parsing Strategy (LEVEL 2 - MANDATORY)
+## 0. PDF Parsing Strategy (LEVEL 2 - PyMuPDF BASED IMPLEMENTATION)
 
-This skill MUST use a **two-stage PDF parsing architecture** to ensure performance, scalability, and accuracy.
+This skill MUST use **PyMuPDF (fitz)** as the primary PDF parsing engine.
 
+❗ No other PDF parsing method is allowed for Stage 1 indexing.
+
+---
+
+## 0.1 Stage 1 — Fast Segment Indexing (PyMuPDF REQUIRED)
+
+Use PyMuPDF text extraction ONLY to perform fast scanning.
+
+### Required Tool:
+- fitz (PyMuPDF)
+
+---
+
+### Execution Rules:
+
+1. Open PDF using PyMuPDF:
+   - fitz.open(pdf)
+
+2. Iterate page by page:
+   - extract text only (no table parsing)
+
+3. Detect Segment Headers using regex / keyword matching:
+
+Target patterns:
+- REF
+- N1
+- DTM
+- W05
+- LIN
+- HL
+
+---
+
+### Output (Segment Index Map):
+
+You MUST generate a mapping:
+
+Segment → Page Number(s)
+
+Example:
+
+REF → Page 3  
+N1  → Page 4  
+DTM → Page 6  
+
+---
+
+### STRICT CONSTRAINTS:
+
+❗ DO NOT extract tables in Stage 1  
+❗ DO NOT parse element-level data in Stage 1  
+❗ ONLY perform text-layer scanning using PyMuPDF  
+
+---
+
+## 0.2 Stage 2 — Lazy Segment Parsing (PyMuPDF REGION EXTRACTION)
+
+After index is built:
+
+For each segment:
+
+1. Re-open PDF with PyMuPDF
+2. Navigate to target page
+3. Extract ONLY relevant text block region
+4. Parse structured elements (REF01, N101, etc.)
+
+---
+
+### Parsing Strategy:
+
+- Use page.get_text("blocks") OR page.get_text("dict")
+- Identify table-like structure via coordinates
+- Extract row/column structure from layout
+
+---
+
+### Example Execution Flow:
+
+REF → locate page → extract block → parse REF01/REF02  
+N1  → locate page → extract block → parse N101/N102  
+
+---
+
+## 0.3 Performance Rules (CRITICAL)
+
+PyMuPDF must be used with following constraints:
+
+- Page-level scanning first (fast mode)
+- Block-level parsing only when needed
+- No full document table extraction
+- No OCR unless explicitly required
+
+---
+
+## 0.4 Recommended PyMuPDF Usage Pattern
+
+```python id="fitz-example"
+import fitz  # PyMuPDF
+
+doc = fitz.open("edi_spec.pdf")
+
+for page_num in range(len(doc)):
+    page = doc[page_num]
+    text = page.get_text("text")
+
+    if "REF" in text or "N1" in text:
+        print(page_num, "contains segment")
 ---
 
 ### Stage 1 — Fast Segment Indexing (MANDATORY)
