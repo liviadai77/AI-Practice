@@ -1,206 +1,206 @@
 ---
-name: edi-mapping-spec-to-excel
-description: Convert EDI specification PDFs (e.g., 940, 945) into structured Excel mapping files by extracting segments, elements, and metadata, and formatting them according to a standardized mapping template. Use when working with trading partner EDI specs and generating mapping documents without missing or inventing fields.
+name: edi-mapping-spec-to-mapping-matrix
+description: Transform EDI specification documents (X12 940/945 etc.) from PDF/Word format into structured OMS/WMS Mapping Matrix using strict extraction rules and a predefined output template. Must follow edi-mapping-excel-template.md as the single source of truth for output formatting.
 metadata:
   author: edi-team
-  version: "1.0.0"
+  version: "2.0.0"
 ---
 
-# EDI Mapping Skill & Standards (Spec → Excel)
-
-## 1. Purpose
-
-This document defines the standard workflow to convert **Trading Partner EDI Specifications (PDF)** into a **structured Excel Mapping File**.
-
-Goal:
-- Ensure consistency across mappings
-- Avoid missing or incorrect fields
-- Standardize mapping output format
+# Skill: EDI Specification to Mapping Matrix Transformer
 
 ---
 
-## 2. Input & Output
+## 1. Role Definition
 
-### 2.1 Input
-- Trading Partner EDI Specification (PDF)
-- Document Types:
-  - 940 (Warehouse Shipping Order)
-  - 945 (Warehouse Shipping Advice)
-  - Others (850 / 856 / etc.)
+You are a **Senior EDI Integration Expert + Product Analyst**.
 
----
-
-### 2.2 Output
-- Excel Mapping File (.xlsx)
-
-Each segment must be expanded into rows with structured columns.
+Your responsibility is to:
+- Interpret EDI X12 specification documents (e.g., 940 / 945 / 856)
+- Extract structured segment-level data
+- Convert into OMS/WMS mapping matrix
+- Ensure 100% fidelity to source document (NO hallucination)
 
 ---
 
-## 3. Extraction Rules (PDF → Structured Data)
+## 2. Input & Output Requirements
 
-For each **Segment (e.g., REF, N1, W05)**:
+### Input
+- Official EDI specification (PDF / Word)
+- Examples: CGS X12 4010 940 / 945
 
-### 3.1 Identify Segment
-- Segment Name (e.g., REF)
-- Segment Description
+### Output
+- Structured **Excel-compatible Markdown table**
+- MUST strictly follow:
+
+👉 `edi-mapping-excel-template.md`
+
+❗ This template is the **ONLY allowed output format definition**
 
 ---
 
-### 3.2 Extract Elements
+## 3. Core Processing Principle (CRITICAL)
 
-Each segment contains multiple elements:
+Execution flow MUST follow:
+
+1. Parse EDI specification document
+2. Identify Segments (e.g., N1, REF, DTM)
+3. Extract all Elements per segment
+4. Apply mapping logic rules (this file)
+5. Format output strictly using:
+   👉 edi-mapping-excel-template.md
+6. Output final mapping table ONLY
+
+---
+
+## 4. Extraction Protocol
+
+### 4.1 Segment Identification
+
+- Identify Segment ID (e.g., N1, REF, DTM, W05)
+- Each segment must be fully expanded (no skipping elements)
+- Preserve loop context when applicable (e.g., N1 Loop)
+
+Optional marker:
+SEGMENT: [ID]
+
+---
+
+### 4.2 Element Extraction Rules
+
+For each segment, extract ALL elements:
+
+Examples:
+- REF01
+- N101
+- W0501
+
+❗ Must match PDF exactly
+
+---
+
+## 5. Column Mapping Logic (STRICT)
+
+Output MUST match:
+
+👉 edi-mapping-excel-template.md
+
+The expected logical structure is:
+
+| Column | Rule |
+|--------|------|
+| Segment | Segment ID (REF / N1 / W05) |
+| Segment Element | e.g., REF01 |
+| ID | Data Element ID (e.g., 128) |
+| Min/Max | Length (e.g., 2/3) |
+| Element Name | Official EDI name |
+| Req | M / O / X |
+| ID Code | Code list value (if applicable) |
+| Description | MUST format: CODE - Description |
+| OMS/WMS Mapping | System field mapping (or TBD) |
+
+---
+
+## 6. Mapping Rules (CRITICAL)
+
+### 6.1 No Hallucination Rule ❗
+- DO NOT invent any field
+- DO NOT guess missing elements
+- ONLY use fields explicitly present in PDF
+
+---
+
+### 6.2 Mapping Field Assignment
+
+- Must be based on semantic meaning
+- Prefer OMS field naming convention
+- If unclear → "TBD"
+- If fixed value → Hardcode "XXX"
+
+---
+
+### 6.3 System Priority Rule
+
+Default mapping target:
+👉 OMS fields first  
+👉 WMS only if explicitly required
+
+---
+
+### 6.4 Hardcode Rule
+
+If required:
+
+Hardcode "VALUE"
+
+Must be explicitly labeled.
+
+---
+
+## 7. Structural Rules
+
+### 7.1 Loop Handling
+- Must preserve loop grouping (e.g., N1 Loop)
+- Do not flatten structure incorrectly
+
+---
+
+### 7.2 Segment Completeness
+- Every segment must be fully represented
+- Optional fields must still appear
+
+---
+
+## 8. Data Cleaning Rules
+
+- Remove extra spaces
+- Normalize dashes and symbols
+- Standardize formatting of descriptions
 
 Example:
-REF01, REF02, REF03...
+IA Internal Vendor Number  
+→ IA - Internal Vendor Number
 
 ---
 
-### 3.3 Required Fields to Extract
+## 9. Failure Conditions
 
-| Column | Description | Source in PDF |
-|--------|------------|--------------|
-| Segment | Segment Name (e.g., REF) | Segment header |
-| Segment Element | e.g., REF01 | Element table |
-| Element ID | e.g., 128 | "ID" column |
-| Min/Max Length | e.g., 2/30 | Min/Max |
-| Element Name | e.g., Reference Identification Qualifier | Name column |
-| Required | M / O | Req column |
-| Data Type | ID / AN / N | Type column |
-| Description | Explanation text | Notes/Description |
-| Mapping Field | OMS/WMS field | Derived |
+STOP execution if:
+
+- Segment is missing
+- Elements are skipped
+- Template format cannot be applied
+- Mapping requires guessing
+
+Return:
+"INVALID INPUT OR TEMPLATE VIOLATION"
 
 ---
 
-## 4. Excel Output Structure
+## 10. Output Constraint (ABSOLUTE RULE)
 
-Each row represents ONE element.
+❗ Output MUST:
 
-### Standard Columns:
-
-| Column Name | Description |
-|------------|------------|
-| Segment |
-| Segment Element |
-| Element ID |
-| Min/Max |
-| Element Name |
-| Required |
-| Type |
-| Description |
-| OMS/WMS Mapping |
+- Follow edi-mapping-excel-template.md exactly
+- Have no extra columns
+- Have no missing columns
+- Match column order strictly
+- Be a single consolidated table
 
 ---
 
-## 5. Description Formatting Rule
+## 11. Example Output
 
-If PDF provides value explanation like:
-
-IA Internal Vendor Number
-
-Must be formatted as:
-
-IA - Internal Vendor Number
+| Segment | Segment Element | ID | Min/Max | Element Name | Req | ID Code | Description | OMS/WMS Mapping |
+|---------|----------------|----|---------|--------------|-----|--------|-------------|------------------|
+| N1 | N101 | 98 | 2/3 | Entity Identifier Code | M | ST | ST - Ship To | ST |
+| N1 | N102 | 93 | 1/60 | Name | X | | | shipToAddress[].name |
 
 ---
 
-## 6. Mapping Rules (Critical)
+## 12. Key Principle Summary
 
-### 6.1 No Fabrication Rule ❗
-- DO NOT invent fields
-- DO NOT skip fields
-- MUST follow PDF exactly
-
----
-
-### 6.2 Full Coverage Rule
-- Every element (e.g., REF01, REF02...) must be included
-- Even optional fields must be listed
-
----
-
-### 6.3 Mapping Field Assignment
-
-Mapping field must be:
-- Based on business meaning
-- Based on system knowledge (OMS/WMS)
-
-Example:
-REF02 → referenceNo  
-N102 → shipToName  
-
----
-
-### 6.4 Unknown Fields
-
-If mapping is unclear:
-
-- Leave blank OR mark as:
-  TBD
-
-DO NOT guess.
-
----
-
-## 7. Segment Handling Rules
-
-### 7.1 Repeat Segments
-- Must still list all elements once
-- Do not duplicate rows unnecessarily
-
----
-
-### 7.2 Loop Awareness
-- Keep segment context (e.g., N1 loop vs header)
-- Add notes if needed
-
----
-
-## 8. Validation Checklist
-
-Before finalizing Excel:
-
-- [ ] All segments covered  
-- [ ] All elements extracted  
-- [ ] No missing required fields  
-- [ ] No fabricated data  
-- [ ] Description formatted correctly  
-- [ ] Mapping fields reviewed  
-
----
-
-## 9. Common Mistakes (Anti-Patterns)
-
-❌ Skipping optional fields  
-❌ Guessing mapping fields  
-❌ Ignoring Min/Max  
-❌ Mixing segment contexts  
-❌ Not standardizing descriptions  
-
----
-
-## 10. Example
-
-Input (PDF):
-Segment: REF
-
-| Ref | ID | Req | Type | Min/Max | Name |
-|-----|----|-----|------|---------|------|
-| REF01 | 128 | M | ID | 2/3 | Reference Identification Qualifier |
-
-Output (Excel Row):
-
-| Segment | Element | ID | Min/Max | Name | Req | Type | Description | Mapping |
-|--------|--------|----|---------|------|-----|------|------------|--------|
-| REF | REF01 | 128 | 2/3 | Reference Identification Qualifier | M | ID | IA - Internal Vendor Number | vendorCode |
-
----
-
-## 11. Summary
-
-This process ensures:
-- 100% spec coverage
-- Zero ambiguity
-- Standardized mapping output
-
-Mapping quality = Spec understanding + Structured extraction + Controlled interpretation
+- 100% spec fidelity
+- Zero hallucination
+- Template-driven output only
+- Segment-level completeness
+- OMS-first mapping strategy
